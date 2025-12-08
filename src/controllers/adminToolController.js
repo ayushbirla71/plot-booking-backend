@@ -39,6 +39,8 @@ const getPlotDrawingTool = async (req, res) => {
     .plot-rect.hold { background: rgba(234, 179, 8, 0.4); border-color: #ca8a04; }
     .plot-rect.booked { background: rgba(239, 68, 68, 0.4); border-color: #dc2626; }
     .plot-rect.drawing { background: rgba(59, 130, 246, 0.5); border-color: #3b82f6; border-style: dashed; }
+    .plot-rect.selection { background: rgba(147, 51, 234, 0.5); border-color: #9333ea; border-width: 3px; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
     .plot-rect:hover { opacity: 0.8; }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; margin-bottom: 5px; font-size: 13px; color: #a0a0a0; }
@@ -79,6 +81,7 @@ const getPlotDrawingTool = async (req, res) => {
         <img src="${baseUrl}${layout.imageUrl}" alt="${layout.name}" class="layout-image" id="layoutImage">
         <div id="plotsContainer"></div>
         <div id="drawingRect" class="plot-rect drawing" style="display:none;"></div>
+        <div id="selectionRect" class="plot-rect selection" style="display:none;"></div>
       </div>
     </div>
     
@@ -182,6 +185,7 @@ const getPlotDrawingTool = async (req, res) => {
     const wrapper = document.getElementById('canvasWrapper');
     const image = document.getElementById('layoutImage');
     const drawingRect = document.getElementById('drawingRect');
+    const selectionRect = document.getElementById('selectionRect');
     const plotsContainer = document.getElementById('plotsContainer');
     const coordsDisplay = document.getElementById('coordsDisplay');
     
@@ -232,19 +236,29 @@ const getPlotDrawingTool = async (req, res) => {
       if (isDrawing) {
         isDrawing = false;
         const coords = getScaledCoords(e);
-        
+
         const x = Math.min(startX, coords.x);
         const y = Math.min(startY, coords.y);
         const w = Math.abs(coords.x - startX);
         const h = Math.abs(coords.y - startY);
-        
+
         if (w > 5 && h > 5) {
           document.getElementById('plotX').value = x;
           document.getElementById('plotY').value = y;
           document.getElementById('plotWidth').value = w;
           document.getElementById('plotHeight').value = h;
+
+          // Show selection rectangle while filling form
+          const rect = image.getBoundingClientRect();
+          const scaleX = rect.width / imageWidth;
+          const scaleY = rect.height / imageHeight;
+          selectionRect.style.display = 'flex';
+          selectionRect.style.left = (x * scaleX) + 'px';
+          selectionRect.style.top = (y * scaleY) + 'px';
+          selectionRect.style.width = (w * scaleX) + 'px';
+          selectionRect.style.height = (h * scaleY) + 'px';
         }
-        
+
         drawingRect.style.display = 'none';
       }
     });
@@ -318,6 +332,7 @@ const getPlotDrawingTool = async (req, res) => {
       document.getElementById('plotPrice').value = '';
       document.getElementById('plotSize').value = '';
       document.getElementById('plotFacing').value = '';
+      selectionRect.style.display = 'none';
     }
     
     function selectPlot(plot, idx) {
@@ -371,8 +386,24 @@ const getPlotDrawingTool = async (req, res) => {
       }
     }
     
+    function updateSelectionRect() {
+      const x = parseInt(document.getElementById('plotX').value);
+      const y = parseInt(document.getElementById('plotY').value);
+      const w = parseInt(document.getElementById('plotWidth').value);
+      const h = parseInt(document.getElementById('plotHeight').value);
+      if (x && y && w && h) {
+        const rect = image.getBoundingClientRect();
+        const scaleX = rect.width / imageWidth;
+        const scaleY = rect.height / imageHeight;
+        selectionRect.style.left = (x * scaleX) + 'px';
+        selectionRect.style.top = (y * scaleY) + 'px';
+        selectionRect.style.width = (w * scaleX) + 'px';
+        selectionRect.style.height = (h * scaleY) + 'px';
+      }
+    }
+
     image.onload = renderPlots;
-    window.addEventListener('resize', renderPlots);
+    window.addEventListener('resize', () => { renderPlots(); updateSelectionRect(); });
     renderPlots();
   </script>
 </body>
