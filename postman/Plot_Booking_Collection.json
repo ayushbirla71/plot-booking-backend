@@ -1,0 +1,475 @@
+{
+  "info": {
+    "name": "Plot Booking API",
+    "description": "API collection for Plot Booking Application - Interactive Layout Map",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Create Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\",\n  \"phone\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/create-admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "create-admin"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.token) {",
+                  "    pm.environment.set('token', jsonData.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Layouts",
+      "item": [
+        {
+          "name": "Create Layout (Upload Image)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.id) {",
+                  "    pm.environment.set('layoutId', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "name", "value": "Green Valley Phase 1", "type": "text"},
+                {"key": "location", "value": "Bangalore, Karnataka", "type": "text"},
+                {"key": "description", "value": "Premium residential plots", "type": "text"},
+                {"key": "image", "type": "file", "src": ""}
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/layouts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "layouts"]
+            }
+          }
+        },
+        {
+          "name": "Get All Layouts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/layouts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "layouts"]
+            }
+          }
+        },
+        {
+          "name": "Get Layout by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/layouts/{{layoutId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "layouts", "{{layoutId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Layout",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "name", "value": "Green Valley Phase 1 - Updated", "type": "text"},
+                {"key": "location", "value": "Whitefield, Bangalore", "type": "text"}
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/layouts/{{layoutId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "layouts", "{{layoutId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Layout",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/layouts/{{layoutId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "layouts", "{{layoutId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plots",
+      "item": [
+        {
+          "name": "Create Plot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.id) {",
+                  "    pm.environment.set('plotId', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"layoutId\": \"{{layoutId}}\",\n  \"plotNumber\": \"101\",\n  \"x\": 120,\n  \"y\": 80,\n  \"width\": 40,\n  \"height\": 40,\n  \"price\": 500000,\n  \"size\": \"30x40\",\n  \"facing\": \"East\",\n  \"description\": \"Corner plot with park view\",\n  \"status\": \"available\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/plots",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "plots"]
+            }
+          }
+        },
+        {
+          "name": "Create Batch Plots",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"layoutId\": \"{{layoutId}}\",\n  \"plots\": [\n    {\"plotNumber\": \"102\", \"x\": 160, \"y\": 80, \"width\": 40, \"height\": 40, \"price\": 450000, \"size\": \"30x40\", \"facing\": \"East\"},\n    {\"plotNumber\": \"103\", \"x\": 200, \"y\": 80, \"width\": 40, \"height\": 40, \"price\": 480000, \"size\": \"30x40\", \"facing\": \"East\"},\n    {\"plotNumber\": \"104\", \"x\": 240, \"y\": 80, \"width\": 40, \"height\": 40, \"price\": 520000, \"size\": \"30x40\", \"facing\": \"East\"}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/plots/batch",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "plots", "batch"]
+            }
+          }
+        },
+        {
+          "name": "Search Plots",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/plots/search?layoutId={{layoutId}}&query=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "plots", "search"],
+              "query": [
+                {"key": "layoutId", "value": "{{layoutId}}"},
+                {"key": "query", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Plot by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/plots/{{plotId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "plots", "{{plotId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Plot",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 550000,\n  \"description\": \"Premium corner plot with park view\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/plots/{{plotId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "plots", "{{plotId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Plot Status (Book/Hold/Available)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"hold\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/plots/{{plotId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "plots", "{{plotId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Delete Plot",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/plots/{{plotId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "plots", "{{plotId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.id) {",
+                  "    pm.environment.set('bookingId', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plotId\": \"{{plotId}}\",\n  \"clientName\": \"John Doe\",\n  \"clientEmail\": \"john.doe@example.com\",\n  \"clientPhone\": \"9876543210\",\n  \"clientAddress\": \"123 Main Street, City\",\n  \"paymentStatus\": \"partial\",\n  \"amountPaid\": 100000,\n  \"notes\": \"Customer requested east facing plot\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Get Booking by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentStatus\": \"completed\",\n  \"amountPaid\": 500000,\n  \"notes\": \"Full payment received\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Map (Backend Rendered)",
+      "item": [
+        {
+          "name": "Get SVG Map (Embed as Image)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/map/{{layoutId}}/svg?showLabels=true&showLegend=true&opacity=0.6",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "map", "{{layoutId}}", "svg"],
+              "query": [
+                {"key": "showLabels", "value": "true"},
+                {"key": "showLegend", "value": "true"},
+                {"key": "opacity", "value": "0.6"}
+              ]
+            },
+            "description": "Returns complete SVG map. Embed: <img src='...' /> or <object data='...' />"
+          }
+        },
+        {
+          "name": "Get HTML Map (Embed as iFrame)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/map/{{layoutId}}/html",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "map", "{{layoutId}}", "html"]
+            },
+            "description": "Returns full interactive HTML page. Embed: <iframe src='...'></iframe>"
+          }
+        },
+        {
+          "name": "Get Map Data JSON",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/map/{{layoutId}}/data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "map", "{{layoutId}}", "data"]
+            },
+            "description": "Returns map data with coordinates, percentages, stats for custom rendering"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        }
+      }
+    }
+  ]
+}
+
