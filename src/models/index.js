@@ -17,7 +17,8 @@ Booking.belongsTo(User, { foreignKey: 'createdBy', as: 'admin' });
 // Sync database
 const syncDatabase = async (force = false) => {
   try {
-    await sequelize.sync({ force });
+    // Use alter: true to update existing tables to match model changes
+    await sequelize.sync({ force, alter: true });
     console.log('Database synchronized successfully');
   } catch (error) {
     console.error('Error synchronizing database:', error);

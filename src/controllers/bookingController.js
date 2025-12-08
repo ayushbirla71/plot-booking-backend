@@ -1,15 +1,14 @@
 const { Booking, Plot, Layout, User } = require('../models');
 
-// Create a new booking (Admin books a plot for a client)
+// Create a new booking (Admin marks a plot as booked)
 const createBooking = async (req, res) => {
   try {
-    const { plotId, clientName, clientEmail, clientPhone, clientAddress,
-            paymentStatus, amountPaid, notes } = req.body;
+    const { plotId } = req.body;
 
-    if (!plotId || !clientName || !clientPhone) {
+    if (!plotId) {
       return res.status(400).json({
         success: false,
-        message: 'plotId, clientName, and clientPhone are required'
+        message: 'plotId is required'
       });
     }
 
@@ -32,13 +31,6 @@ const createBooking = async (req, res) => {
     // Create booking
     const booking = await Booking.create({
       plotId,
-      clientName,
-      clientEmail,
-      clientPhone,
-      clientAddress,
-      paymentStatus: paymentStatus || 'pending',
-      amountPaid: amountPaid || 0,
-      notes,
       createdBy: req.user.id,
       status: 'confirmed'
     });

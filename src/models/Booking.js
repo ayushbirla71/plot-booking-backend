@@ -15,21 +15,18 @@ const Booking = sequelize.define('Booking', {
       key: 'id'
     }
   },
-  // Client details
+  // Client details (optional)
   clientName: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   clientEmail: {
     type: DataTypes.STRING,
-    allowNull: true,
-    validate: {
-      isEmail: true
-    }
+    allowNull: true
   },
   clientPhone: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   clientAddress: {
     type: DataTypes.TEXT,
