@@ -31,10 +31,16 @@ const getPlotDrawingTool = async (req, res) => {
     .header h1 { font-size: 14px; }
     .header-info { font-size: 12px; }
     .container { display: flex; flex-direction: column; min-height: calc(100vh - 60px); }
-    .canvas-area { flex: 1; overflow: auto; padding: 10px; background: #0f0f23; -webkit-overflow-scrolling: touch; }
+    .canvas-area { flex: 1; overflow: auto; padding: 10px; background: #0f0f23; -webkit-overflow-scrolling: touch; position: relative; }
     .sidebar { background: #16213e; padding: 15px; overflow-y: auto; max-height: 50vh; }
-    .canvas-wrapper { position: relative; display: inline-block; cursor: crosshair; touch-action: none; }
-    .layout-image { display: block; max-width: 100%; }
+    .canvas-wrapper { position: relative; display: inline-block; cursor: crosshair; touch-action: none; transform-origin: top left; transition: transform 0.2s ease; }
+    .layout-image { display: block; max-width: none; }
+    #plotsContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    #plotsContainer .plot-rect { pointer-events: auto; }
+    .zoom-controls { position: fixed; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px; }
+    .zoom-btn { width: 44px; height: 44px; border: none; border-radius: 50%; background: #3b82f6; color: white; font-size: 18px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
+    .zoom-btn:hover { background: #2563eb; }
+    .zoom-btn:active { transform: scale(0.95); }
     .plot-rect { position: absolute; border: 2px solid; background: rgba(34, 197, 94, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black; }
     .plot-rect.available { background: rgba(34, 197, 94, 0.4); border-color: #16a34a; }
     .plot-rect.hold { background: rgba(234, 179, 8, 0.4); border-color: #ca8a04; }
@@ -79,6 +85,8 @@ const getPlotDrawingTool = async (req, res) => {
       .form-group input, .form-group select { padding: 10px; }
       .plot-list { max-height: 300px; }
       #jsonOutput { height: 150px; font-size: 11px; }
+      .zoom-controls { bottom: 30px; right: 370px; }
+      .zoom-btn { width: 48px; height: 48px; font-size: 20px; }
     }
   </style>
 </head>
@@ -88,11 +96,18 @@ const getPlotDrawingTool = async (req, res) => {
     <div class="header-info">
       <span id="coordsDisplay">X: 0, Y: 0</span>
       <span style="margin-left: 10px;">${layout.imageWidth}x${layout.imageHeight}</span>
+      <span style="margin-left: 10px;" id="zoomDisplay">Zoom: 100%</span>
     </div>
   </div>
 
   <div class="container">
-    <div class="canvas-area">
+    <div class="canvas-area" id="canvasArea">
+      <!-- Zoom Controls -->
+      <div class="zoom-controls" id="zoomControls">
+        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">➕</button>
+        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">➖</button>
+        <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom">🔄</button>
+      </div>
       <div class="canvas-wrapper" id="canvasWrapper">
         <img src="${baseUrl}${layout.imageUrl}" alt="${layout.name}" class="layout-image" id="layoutImage">
         <div id="plotsContainer"></div>
@@ -198,6 +213,7 @@ const getPlotDrawingTool = async (req, res) => {
     let newPlots = [];
     let isDrawing = false;
     let startX, startY;
+    let currentZoom = 1;
 
     const wrapper = document.getElementById('canvasWrapper');
     const image = document.getElementById('layoutImage');
@@ -205,6 +221,29 @@ const getPlotDrawingTool = async (req, res) => {
     const selectionRect = document.getElementById('selectionRect');
     const plotsContainer = document.getElementById('plotsContainer');
     const coordsDisplay = document.getElementById('coordsDisplay');
+    const zoomDisplay = document.getElementById('zoomDisplay');
+
+    // Zoom functions
+    function updateZoom() {
+      wrapper.style.transform = 'scale(' + currentZoom + ')';
+      zoomDisplay.textContent = 'Zoom: ' + Math.round(currentZoom * 100) + '%';
+      renderPlots(); // Re-render plots with new scale
+    }
+
+    function zoomIn() {
+      currentZoom = Math.min(currentZoom * 1.25, 5);
+      updateZoom();
+    }
+
+    function zoomOut() {
+      currentZoom = Math.max(currentZoom / 1.25, 0.5);
+      updateZoom();
+    }
+
+    function resetZoom() {
+      currentZoom = 1;
+      updateZoom();
+    }
 
     // Toggle sidebar on mobile
     function toggleSidebar() {
@@ -226,19 +265,15 @@ const getPlotDrawingTool = async (req, res) => {
       };
     }
 
-    // Update drawing rect position
+    // Update drawing rect position (use percentage for zoom compatibility)
     function updateDrawingRect(coords) {
-      const rect = image.getBoundingClientRect();
-      const scaleX = rect.width / imageWidth;
-      const scaleY = rect.height / imageHeight;
-
       const w = coords.x - startX;
       const h = coords.y - startY;
 
-      drawingRect.style.left = (Math.min(startX, coords.x) * scaleX) + 'px';
-      drawingRect.style.top = (Math.min(startY, coords.y) * scaleY) + 'px';
-      drawingRect.style.width = (Math.abs(w) * scaleX) + 'px';
-      drawingRect.style.height = (Math.abs(h) * scaleY) + 'px';
+      drawingRect.style.left = ((Math.min(startX, coords.x) / imageWidth) * 100) + '%';
+      drawingRect.style.top = ((Math.min(startY, coords.y) / imageHeight) * 100) + '%';
+      drawingRect.style.width = ((Math.abs(w) / imageWidth) * 100) + '%';
+      drawingRect.style.height = ((Math.abs(h) / imageHeight) * 100) + '%';
     }
 
     // Start drawing
@@ -273,15 +308,12 @@ const getPlotDrawingTool = async (req, res) => {
           document.getElementById('plotWidth').value = w;
           document.getElementById('plotHeight').value = h;
 
-          // Show selection rectangle while filling form
-          const rect = image.getBoundingClientRect();
-          const scaleX = rect.width / imageWidth;
-          const scaleY = rect.height / imageHeight;
+          // Show selection rectangle while filling form (use percentage)
           selectionRect.style.display = 'flex';
-          selectionRect.style.left = (x * scaleX) + 'px';
-          selectionRect.style.top = (y * scaleY) + 'px';
-          selectionRect.style.width = (w * scaleX) + 'px';
-          selectionRect.style.height = (h * scaleY) + 'px';
+          selectionRect.style.left = ((x / imageWidth) * 100) + '%';
+          selectionRect.style.top = ((y / imageHeight) * 100) + '%';
+          selectionRect.style.width = ((w / imageWidth) * 100) + '%';
+          selectionRect.style.height = ((h / imageHeight) * 100) + '%';
 
           // Show sidebar on mobile after drawing
           document.getElementById('sidebarContent').classList.add('show');
@@ -335,17 +367,14 @@ const getPlotDrawingTool = async (req, res) => {
 
     function renderPlots() {
       plotsContainer.innerHTML = '';
-      const rect = image.getBoundingClientRect();
-      const scaleX = rect.width / imageWidth;
-      const scaleY = rect.height / imageHeight;
-
+      // Use percentage-based positioning to work correctly with zoom
       [...existingPlots, ...newPlots].forEach((plot, idx) => {
         const div = document.createElement('div');
         div.className = 'plot-rect ' + plot.status;
-        div.style.left = (plot.x * scaleX) + 'px';
-        div.style.top = (plot.y * scaleY) + 'px';
-        div.style.width = (plot.width * scaleX) + 'px';
-        div.style.height = (plot.height * scaleY) + 'px';
+        div.style.left = ((plot.x / imageWidth) * 100) + '%';
+        div.style.top = ((plot.y / imageHeight) * 100) + '%';
+        div.style.width = ((plot.width / imageWidth) * 100) + '%';
+        div.style.height = ((plot.height / imageHeight) * 100) + '%';
         div.textContent = plot.plotNumber;
         const isNew = idx >= existingPlots.length;
         div.onclick = () => selectPlot(plot, idx, isNew);
@@ -445,15 +474,12 @@ const getPlotDrawingTool = async (req, res) => {
         document.getElementById('addBtn').style.display = 'inline-block';
       }
 
-      // Show selection on map
-      const rect = image.getBoundingClientRect();
-      const scaleX = rect.width / imageWidth;
-      const scaleY = rect.height / imageHeight;
+      // Show selection on map (use percentage for zoom compatibility)
       selectionRect.style.display = 'flex';
-      selectionRect.style.left = (plot.x * scaleX) + 'px';
-      selectionRect.style.top = (plot.y * scaleY) + 'px';
-      selectionRect.style.width = (plot.width * scaleX) + 'px';
-      selectionRect.style.height = (plot.height * scaleY) + 'px';
+      selectionRect.style.left = ((plot.x / imageWidth) * 100) + '%';
+      selectionRect.style.top = ((plot.y / imageHeight) * 100) + '%';
+      selectionRect.style.width = ((plot.width / imageWidth) * 100) + '%';
+      selectionRect.style.height = ((plot.height / imageHeight) * 100) + '%';
 
       // Show sidebar on mobile
       document.getElementById('sidebarContent').classList.add('show');
